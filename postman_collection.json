@@ -1,0 +1,420 @@
+{
+  "info": {
+    "_postman_id": "b3e0c451-9f93-4a67-b5bf-df2d59ca8809",
+    "name": "Dynamic Form Builder - Technical Assessment API",
+    "description": "### 🚀 Complete API Test Suite for Sathish Kumar / Reviewer\n\nRun the requests in numbered sequence (Step 1 to Step 14).\n\nVariables like `{{token}}`, `{{formId}}`, `{{formSlug}}`, and `{{submissionId}}` are **automatically saved** by test scripts between requests, so you do NOT need to copy/paste anything manually!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "formId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "formSlug",
+      "value": "frontend-developer-application",
+      "type": "string"
+    },
+    {
+      "key": "submissionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Step 1 - Authentication (Admin)",
+      "description": "Endpoints to authenticate and get session tokens.",
+      "item": [
+        {
+          "name": "1.1 Login as Admin (Auto-saves {{token}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Auto-save JWT token to collection variable",
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  console.log('✅ Token saved automatically:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@dynamicforms.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in with the default admin credentials and sets the `form_builder_admin_token` HttpOnly cookie."
+          }
+        },
+        {
+          "name": "1.2 Register New Admin (Optional)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Super Admin\",\n  \"email\": \"admin@dynamicforms.com\",\n  \"password\": \"password123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers an admin user with bcrypt password hashing (10 salt rounds)."
+          }
+        },
+        {
+          "name": "1.3 Get Current Admin Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Verifies that the admin token or HttpOnly cookie is valid."
+          }
+        },
+        {
+          "name": "1.4 Admin Logout (Clears Cookie)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Clears the `form_builder_admin_token` session cookie."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 2 - File & Image Upload",
+      "description": "Handles multipart form-data file and image uploads.",
+      "item": [
+        {
+          "name": "2.1 Upload File / Image (POST /api/upload)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Choose any sample image (.jpg/.png) or document (.pdf)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload"]
+            },
+            "description": "Uploads a file to `backend/uploads/` and returns the relative path `uploads/filename.ext` and public URL."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 3 - Form Management (Admin)",
+      "description": "Admin CRUD for dynamic forms.",
+      "item": [
+        {
+          "name": "3.1 Create Form (Auto-saves {{formId}} & {{formSlug}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Auto-save formId and formSlug for subsequent requests",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data._id) {",
+                  "  pm.collectionVariables.set('formId', json.data._id);",
+                  "  console.log('✅ Form ID saved:', json.data._id);",
+                  "}",
+                  "if (json.data && json.data.slug) {",
+                  "  pm.collectionVariables.set('formSlug', json.data.slug);",
+                  "  console.log('✅ Form Slug saved:', json.data.slug);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Frontend Developer Application\",\n  \"description\": \"Please submit your experience and resume.\",\n  \"status\": \"published\",\n  \"fields\": [\n    {\n      \"key\": \"fullName\",\n      \"label\": \"Full Name\",\n      \"type\": \"text\",\n      \"required\": true,\n      \"placeholder\": \"Enter your full name\",\n      \"order\": 0\n    },\n    {\n      \"key\": \"email\",\n      \"label\": \"Email Address\",\n      \"type\": \"email\",\n      \"required\": true,\n      \"placeholder\": \"you@example.com\",\n      \"order\": 1\n    },\n    {\n      \"key\": \"phone\",\n      \"label\": \"Phone Number\",\n      \"type\": \"phone\",\n      \"required\": true,\n      \"placeholder\": \"+1 555-0199\",\n      \"order\": 2\n    },\n    {\n      \"key\": \"experienceYears\",\n      \"label\": \"Years of Experience\",\n      \"type\": \"radio\",\n      \"required\": true,\n      \"options\": [\"0-1 Year (Junior)\", \"2-4 Years (Mid)\", \"5+ Years (Senior)\"],\n      \"order\": 3\n    },\n    {\n      \"key\": \"skills\",\n      \"label\": \"Primary Skills\",\n      \"type\": \"checkbox\",\n      \"required\": true,\n      \"options\": [\"React.js\", \"Redux Toolkit\", \"Node.js\", \"MongoDB\"],\n      \"order\": 4\n    },\n    {\n      \"key\": \"resume\",\n      \"label\": \"Upload Resume\",\n      \"type\": \"file\",\n      \"required\": false,\n      \"order\": 5\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/forms",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms"]
+            },
+            "description": "Creates a form with title, description, and dynamic questions. The slug is automatically derived as `frontend-developer-application`."
+          }
+        },
+        {
+          "name": "3.2 List All Forms (Search & Filter)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forms?page=1&limit=10&status=published&search=",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number" },
+                { "key": "limit", "value": "10", "description": "Items per page" },
+                { "key": "status", "value": "published", "description": "Filter: published or draft" },
+                { "key": "search", "value": "", "description": "Search keyword" }
+              ]
+            },
+            "description": "Lists forms with pagination metadata and total items."
+          }
+        },
+        {
+          "name": "3.3 Get Form by Slug (Public Route)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forms/{{formSlug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms", "{{formSlug}}"]
+            },
+            "description": "Fetches the dynamic form schema using the human-friendly URL slug (no login required)."
+          }
+        },
+        {
+          "name": "3.4 Get Form by Database ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forms/{{formId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms", "{{formId}}"]
+            },
+            "description": "Fetches form schema using MongoDB ObjectId for backward compatibility."
+          }
+        },
+        {
+          "name": "3.5 Update Form Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Frontend Developer Application (Updated)\",\n  \"description\": \"Updated application instructions.\",\n  \"status\": \"published\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/forms/{{formId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms", "{{formId}}"]
+            },
+            "description": "Updates form title or description."
+          }
+        },
+        {
+          "name": "3.6 Delete Form (Cascade deletes submissions)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/forms/{{formId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms", "{{formId}}"]
+            },
+            "description": "Permanently deletes the form and all associated submissions."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 4 - Submissions (Public & Read-Only Admin)",
+      "description": "Public user submissions and read-only admin inspection.",
+      "item": [
+        {
+          "name": "4.1 Submit Response by Slug (Public - Validates Data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data._id) {",
+                  "  pm.collectionVariables.set('submissionId', json.data._id);",
+                  "  console.log('✅ Submission ID saved:', json.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"fullName\": \"Mohamed Zubair\",\n    \"email\": \"mohamed.zubair@example.com\",\n    \"phone\": \"+91 9876543210\",\n    \"experienceYears\": \"2-4 Years (Mid)\",\n    \"skills\": [\"React.js\", \"Redux Toolkit\", \"Node.js\", \"MongoDB\"],\n    \"resume\": \"uploads/sample-resume.pdf\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/forms/{{formSlug}}/submissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms", "{{formSlug}}", "submissions"]
+            },
+            "description": "Public endpoint where respondents submit their answers. Strict independent backend validation verifies all fields."
+          }
+        },
+        {
+          "name": "4.2 Get Submissions for Form (Admin Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/forms/{{formSlug}}/submissions?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["forms", "{{formSlug}}", "submissions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Lists submissions for this form with client IP, user agent, and timestamp."
+          }
+        },
+        {
+          "name": "4.3 Inspect Single Submission (Read-Only Audit Record)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/submissions/{{submissionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions", "{{submissionId}}"]
+            },
+            "description": "Read-only view of a specific user submission. Submissions cannot be edited to preserve audit integrity."
+          }
+        },
+        {
+          "name": "4.4 Delete Submission",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/submissions/{{submissionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions", "{{submissionId}}"]
+            },
+            "description": "Deletes a single submission and atomically decrements the form counter."
+          }
+        }
+      ]
+    }
+  ]
+}
